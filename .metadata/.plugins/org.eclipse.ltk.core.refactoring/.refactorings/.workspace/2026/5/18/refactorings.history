@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Delete resource &apos;ece_528_Black_Jack/camera&apos;" deleteContents="false" description="Delete resource &apos;ece_528_Black_Jack/camera&apos;" element1="/ece_528_Black_Jack/camera" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1777687603227"/>
+</session>

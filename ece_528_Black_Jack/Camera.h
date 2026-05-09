@@ -1,0 +1,45 @@
+/*
+ * Camera.h
+ *
+ *  Created on: May 1, 2026
+ *      Author: limac
+ */
+
+#ifndef CAMERA_H_
+#define CAMERA_H_
+
+#include <stdint.h>
+
+//void camera_gpio_init(void);
+//
+//uint8_t cam_read_byte(void);
+//
+//void camera_xclk_init(void);
+//
+//void camera_i2c_init(void);
+//
+//int ov7670_write(uint8_t reg, uint8_t val);
+//
+//void ov7670_init(void);
+//
+//uint8_t ov7670_read(uint8_t reg);
+//
+//void ov7670_enable_colorbar(void);
+
+void camera_gpio_init(void);
+void camera_xclk_init(void);
+void camera_i2c_init(void);
+
+int ov7670_write(uint8_t reg, uint8_t val);
+uint8_t ov7670_read(uint8_t reg);
+
+void ov7670_init(void);
+void ov7670_enable_colorbar(void);
+void ov7670_set_qqvga_rgb565(void);
+
+uint8_t cam_read_byte(void);
+
+
+
+#endif /* CAMERA_H_ */
+

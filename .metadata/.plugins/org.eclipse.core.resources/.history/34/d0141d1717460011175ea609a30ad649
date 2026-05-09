@@ -1,0 +1,108 @@
+/*
+ * Camera.c
+ *
+ *  Created on: May 1, 2026
+ *      Author: limac
+ */
+
+#include "msp.h"
+#include "Camera.h"
+
+void camera_gpio_init(void)
+{
+    // Data pins as inputs
+    P4->SEL0 &= ~0xFE;
+    P4->SEL1 &= ~0xFE;
+    P4->DIR &= ~0xFE;
+    P5->SEL0 &= ~0x01;
+    P5->SEL1 &= ~0x01;
+    P5->DIR &= ~0x01;
+
+    // Sync pins as inputs
+    P2->DIR &= ~0xE0;
+
+    // Control pins as outputs
+    P5->DIR |= 0x06;
+
+    // Normal mode
+    P5->OUT |= 0x02;
+    P4->OUT &= ~0x04;
+}
+
+uint8_t cam_read_byte(void)
+{
+    return ((P4->IN >> 1) & 0x7F) | ((P5->IN & 0x01) << 7);
+}
+
+void camera_xlck_init(void)
+{
+    // P2.4 as timer output
+    P2->DIR |= 0x08;
+    P2->SEL0 |= 0x08;
+    P2->SEL1 &= ~0x08;
+
+    // Timer_A0 setup (SMCLK, toggle mode)
+    TIMER_A0->CCR[0] = 3;
+    TIMER_A0->CCR[1] = 1;
+    TIMER_A0->CCTL[1] = TIMER_A_CCTLN_OUTMOD_7;
+
+    TIMER_A0->CTL = TIMER_A_CTL_SSEL__SMCLK | TIMER_A_CTL_MC__UP;
+}
+
+void camera_i2c_init(void)
+{
+    // Pins
+    P6->SEL0 |= 0x30;
+    P6->SEL1 &= ~0x30;
+
+    EUSCI_B1->CTLW0 = EUSCI_B_CTLW0_SWRST;
+    EUSCI_B1->CTLW0 |= EUSCI_B_CTLW0_MODE_3 |
+            EUSCI_B_CTLW0_MST |
+            EUSCI_B_CTLW0_MST |
+            EUSCI_B_CTLW0_SYNC |
+            EUSCI_B_CTLW0_SSEL__SMCLK;
+
+    EUSCI_B1->BRW = 30; // ~100kHz
+
+    EUSCI_B1->CTLW0 &= ~EUSCI_B_CTLW0_SWRST;
+}
+
+void ov7670_write(uint8_t reg, uint8_t val)
+{
+    while(EUSCI_B1->STATW & EUSCI_B_STATW_BBUSY);
+
+    EUSCI_B1->I2CSA = 0X21;
+    EUSCI_B1->CTLW0 |= EUSCI_B_CTLW0_TR;
+    EUSCI_B1->CTLW0 |= EUSCI_B_CTLW0_TXSTT;
+
+    while (!(EUSCI_B1->IFG & EUSCI_B_IFG_TXIFG0));
+    EUSCI_B1->TXBUF = reg;
+
+    while (!(EUSCI_B1->IFG & EUSCI_B_IFG_TXIFG0));
+    EUSCI_B1->TXBUF = val;
+
+    while (!(EUSCI_B1->IFG & EUSCI_B_IFG_TXIFG0));
+    EUSCI_B1->CTLW0 |= EUSCI_B_CTLW0_TXSTP;
+
+    while (EUSCI_B1->CTLW0 & EUSCI_B_CTLW0_TXSTP);
+}
+
+void ov7670_init(void)
+{
+    // Reset
+    ov7670_write(0x12, 0x80);
+    volatile int i;
+    for (int i = 0; i < 100000; i++)
+
+    // RGB mode
+    ov7670_write(0x12, 0x04);
+
+    // Clock divide (slow it down)
+    ov7670_write(0x11, 0x01);
+
+    // RGB565
+    ov7670_write(0x40, 0xD0);
+
+    // TSLB (common setting)
+    ov7670_write(0x3A, 0x04);
+}

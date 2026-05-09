@@ -1,0 +1,222 @@
+/*****************************************************************************
+*
+* Copyright (C) 2013 - 2017 Texas Instruments Incorporated - http://www.ti.com/
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions
+* are met:
+*
+* * Redistributions of source code must retain the above copyright
+*   notice, this list of conditions and the following disclaimer.
+*
+* * Redistributions in binary form must reproduce the above copyright
+*   notice, this list of conditions and the following disclaimer in the
+*   documentation and/or other materials provided with the
+*   distribution.
+*
+* * Neither the name of Texas Instruments Incorporated nor the names of
+*   its contributors may be used to endorse or promote products derived
+*   from this software without specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+* A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+* OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+* SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+* LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+* DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+* THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*
+******************************************************************************
+*
+* MSP432 empty main.c template
+*
+******************************************************************************/
+
+#include "msp.h"
+#include "Camera.h"
+#include "card_vision.h"
+#include "EUSCI_B1_I2C.h"
+
+void Setup_XCLK(void) {
+    P2->SEL0 |= 0x80;   // Set P2.7 to Timer_A function
+    P2->SEL1 &= ~0x80;
+    P2->DIR  |= 0x80;
+
+    TIMER_A0->CCR[0] = 3;             // Period for 12MHz (if SMCLK is 48MHz)
+    TIMER_A0->CCTL[4] = 0x0080;       // Toggle mode
+    TIMER_A0->CTL = 0x0214;           // SMCLK, Up mode, Clear
+}
+
+int main(void)
+{
+    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD; // Stop watchdog
+
+    // --- STEP 1: START THE CLOCK ---
+    // The camera needs this to "live"
+    Setup_XCLK();
+
+    // Give the camera a tiny moment to stabilize its internal oscillator
+    uint32_t i;
+    for(i=0; i<10000; i++);
+
+    // --- STEP 2: INIT COMMUNICATION ---
+    EUSCI_B1_I2C_Init();
+
+    // --- STEP 3: CONFIGURE CAMERA ---
+    // This calls the OV7670_Write_Reg functions
+    OV7670_Init_Sequence();
+
+    while(1)
+    {
+        // Now you are ready to capture data!
+    }
+}
+
+//volatile int detected_digit = -1;
+//
+//int main(void)
+//{
+//    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
+//
+//    camera_gpio_init();
+//    camera_xclk_init();
+//
+//    volatile int i;
+//    for (i = 0; i < 5; i++)
+//    {
+//        __NOP();
+//    }
+//
+//    camera_i2c_init();
+//    ov7670_init();
+//
+//    capture_frame_gray();
+//        threshold_roi(100);          // tune this
+//        downsample_roi_to_digit();
+//        detected_digit = recognize_digit();
+//
+//    // turn OFF color bars when reading real cards
+//    // you may want your own small-frame camera config here
+//    // ov7670_set_qqvga_rgb565();  // if you already added it
+//
+//    while (1)
+//    {
+//
+//
+//        // Set a breakpoint here and inspect detected_digit
+//        __NOP();
+//    }
+//}
+
+//#include "msp.h"
+//#include "Camera.h"
+//
+//#define W 80
+//#define H 60
+//
+//volatile uint8_t frame[H][W];
+//volatile uint8_t pid = 0;
+//volatile uint8_t ver = 0;
+//volatile int row = 0;
+//volatile int col = 0;
+//
+//static void wait_pclk_rising(void)
+//{
+//    while (!(P2->IN & BIT7));
+//}
+//
+//static void wait_pclk_falling(void)
+//{
+//    while (P2->IN & BIT7);
+//}
+//
+//int main(void)
+//{
+//    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
+//
+//    camera_gpio_init();
+//    camera_xclk_init();
+//
+//    volatile int i;
+//    for (i = 0; i < 50000; i++) __NOP();
+//
+//    camera_i2c_init();
+//    ov7670_init();
+//    ov7670_set_qqvga_rgb565();
+//    ov7670_enable_colorbar();
+//
+//    pid = ov7670_read(0x0A);
+//    ver = ov7670_read(0x0B);
+//
+//    // Expect 0x76 and 0x73 on a real OV7670
+//    while (1)
+//    {
+//        // wait for frame boundary
+//        while (P2->IN & BIT5);
+//        while (!(P2->IN & BIT5));
+//        while (P2->IN & BIT5);
+//
+//        for (row = 0; row < H; row++)
+//        {
+//            while (!(P2->IN & BIT6));   // HREF high = valid line
+//
+//            for (col = 0; col < W; col++)
+//            {
+//                // RGB565 is 2 bytes/pixel. For now, keep only the first byte
+//                // so you can "see something" in RAM fast.
+//                wait_pclk_rising();
+//                frame[row][col] = cam_read_byte();
+//                wait_pclk_falling();
+//
+//                wait_pclk_rising();      // discard second byte
+//                (void)cam_read_byte();
+//                wait_pclk_falling();
+//            }
+//
+//            while (P2->IN & BIT6);       // wait for end of line
+//        }
+//
+//        __NOP(); // pause point for debugger
+//    }
+//}
+
+//int main(void)
+//{
+//    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
+//
+//    camera_gpio_init();
+//    camera_xclk_init();
+//
+//    volatile int i;
+//    for (i = 0; i < 50000; i++);
+//
+//    camera_i2c_init();
+//    ov7670_init();
+//    ov7670_enable_colorbar();
+//
+//    volatile uint8_t pid = 0;
+//    volatile uint8_t ver = 0;
+//
+//    pid = ov7670_read(0x0A);
+//    ver = ov7670_read(0x0B);
+//
+//    volatile uint8_t line[160];
+//    volatile int idx = 0;
+//
+//    while (1)
+//    {
+//        while (!(P2->IN & BIT6));   // wait for HREF high
+//        idx = 0;
+//
+//        while ((P2->IN & BIT6) && idx < 160)
+//        {
+//            while (!(P2->IN & BIT7));
+//            line[idx++] = cam_read_byte();
+//            while (P2->IN & BIT7);
+//        }
+//    }
+//}

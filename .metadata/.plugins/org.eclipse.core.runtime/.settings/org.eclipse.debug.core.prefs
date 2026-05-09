@@ -1,0 +1,6 @@
+//org.eclipse.debug.core.PREFERRED_DELEGATES/org.eclipse.cdt.launch.applicationLaunchType=org.eclipse.cdt.dsf.gdb.launch.localCLaunch,debug,;org.eclipse.cdt.cdi.launch.localCLaunch,run,;
+//org.eclipse.debug.core.PREFERRED_DELEGATES/org.eclipse.cdt.launch.attachLaunchType=org.eclipse.cdt.dsf.gdb.launch.attachCLaunch,debug,;
+//org.eclipse.debug.core.PREFERRED_DELEGATES/org.eclipse.cdt.launch.postmortemLaunchType=org.eclipse.cdt.dsf.gdb.launch.coreCLaunch,debug,;
+//org.eclipse.debug.core.PREFERRED_DELEGATES/org.eclipse.cdt.launch.remoteApplicationLaunchType=org.eclipse.rse.remotecdt.dsf.debug,debug,;
+eclipse.preferences.version=1
+prefWatchExpressions=<?xml version\="1.0" encoding\="UTF-8" standalone\="no"?>\r\n<watchExpressions>\r\n    <expression enabled\="true" text\="frame[0][0]"/>\r\n    <expression enabled\="true" text\="frame[10][10]"/>\r\n    <expression enabled\="true" text\="frame[20][20]"/>\r\n    <expression enabled\="true" text\="frame[30][30]"/>\r\n    <expression enabled\="true" text\="detected_digit"/>\r\n    <expression enabled\="true" text\="frame"/>\r\n    <expression enabled\="true" text\="roi_bin"/>\r\n    <expression enabled\="true" text\="digit_img"/>\r\n</watchExpressions>\r\n

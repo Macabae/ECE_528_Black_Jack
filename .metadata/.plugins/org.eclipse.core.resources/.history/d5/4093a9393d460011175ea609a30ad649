@@ -1,0 +1,369 @@
+/*
+ * Camera.c
+ *
+ *  Created on: May 1, 2026
+ *      Author: limac
+ */
+
+#include "msp.h"
+#include "Camera.h"
+
+#define CAM_RESET BIT1
+#define CAM_PWDN  BIT2
+#define OV7670_ADDR 0x21
+
+//void camera_gpio_init(void)
+//{
+//    // Data pins as inputs
+//    P4->SEL0 &= ~0xFE;
+//    P4->SEL1 &= ~0xFE;
+//    P4->DIR &= ~0xFE;
+//    P4->REN &= ~0xFE;
+//
+//    P5->SEL0 &= ~0x01;
+//    P5->SEL1 &= ~0x01;
+//    P5->DIR &= ~0x01;
+//    P5->REN &= ~0x01;
+//
+//    // Sync pins as inputs
+//    P2->SEL0 &= ~0xE0;
+//    P2->SEL1 &= ~0xE0;
+//    P2->DIR &= ~0xE0;
+//    P2->REN &= ~0xE0;
+//
+//    // Control pins as outputs
+//    P5->DIR |= 0x06;
+//
+//    // Normal mode
+//    P5->OUT |= 0x02;
+//    P5->OUT &= ~0x04;
+//    P4->OUT &= ~0x04;
+//}
+//
+//uint8_t cam_read_byte(void)
+//{
+//    return ((P4->IN >> 1) & 0x7F) | ((P5->IN & 0x01) << 7);
+//}
+//
+//void camera_xclk_init(void)
+//{
+//    // P2.4 as timer output
+//    P2->DIR |= 0x10;
+//    P2->SEL0 |= 0x10;
+//    P2->SEL1 &= ~0x10;
+//
+//    // Timer_A0 setup (SMCLK, toggle mode)
+//    TIMER_A0->CCR[0] = 3;
+//    TIMER_A0->CCR[1] = 1;
+//    TIMER_A0->CCTL[1] = TIMER_A_CCTLN_OUTMOD_7;
+//
+//    TIMER_A0->CTL = TIMER_A_CTL_SSEL__SMCLK | TIMER_A_CTL_MC__UP;
+//}
+//
+//void camera_i2c_init(void)
+//{
+//    P6->SEL0 |= 0x30;
+//    P6->SEL1 &= ~0x30;
+//
+//    EUSCI_B1->CTLW0 = EUSCI_B_CTLW0_SWRST;   // reset peripheral
+//    EUSCI_B1->IE = 0;
+//    EUSCI_B1->IFG = 0;
+//
+//    EUSCI_B1->CTLW0 = EUSCI_B_CTLW0_SWRST |
+//                      EUSCI_B_CTLW0_MODE_3 |
+//                      EUSCI_B_CTLW0_MST |
+//                      EUSCI_B_CTLW0_SYNC |
+//                      EUSCI_B_CTLW0_SSEL__SMCLK;
+//
+//    EUSCI_B1->BRW = 30;
+//    EUSCI_B1->I2CSA = 0x21;
+//
+//    EUSCI_B1->CTLW0 &= ~EUSCI_B_CTLW0_SWRST;
+//}
+//
+//int ov7670_write(uint8_t reg, uint8_t val)
+//{
+//    volatile uint32_t timeout = 100000;
+//
+//    while ((EUSCI_B1->STATW & EUSCI_B_STATW_BBUSY) && --timeout);
+//
+//    if (timeout == 0)
+//        return 0;
+//
+//    EUSCI_B1->I2CSA = 0x21;
+//    EUSCI_B1->CTLW0 |= EUSCI_B_CTLW0_TR;
+//    EUSCI_B1->CTLW0 |= EUSCI_B_CTLW0_TXSTT;
+//
+//    timeout = 100000;
+//    while (!(EUSCI_B1->IFG & EUSCI_B_IFG_TXIFG0) && --timeout);
+//    if (timeout == 0)
+//        return 0;
+//
+//    EUSCI_B1->TXBUF = reg;
+//
+//    timeout = 100000;
+//    while (!(EUSCI_B1->IFG & EUSCI_B_IFG_TXIFG0) && --timeout);
+//    if (timeout == 0)
+//        return 0;
+//
+//    EUSCI_B1->TXBUF = val;
+//
+//    timeout = 100000;
+//    while (!(EUSCI_B1->IFG & EUSCI_B_IFG_TXIFG0) && --timeout);
+//    if (timeout == 0)
+//        return 0;
+//
+//    EUSCI_B1->CTLW0 |= EUSCI_B_CTLW0_TXSTP;
+//
+//    timeout = 100000;
+//    while ((EUSCI_B1->CTLW0 & EUSCI_B_CTLW0_TXSTP) && --timeout);
+//    if (timeout == 0)
+//        return 0;
+//
+//    return 1;
+//}
+//
+//void ov7670_init(void)
+//{
+//    // Reset
+//    ov7670_write(0x12, 0x80);
+//    volatile int i;
+//    for (i = 0; i < 100000; i++);
+//
+//    // RGB mode
+//    ov7670_write(0x12, 0x04);
+//
+//    // Clock divide (slow it down)
+//    ov7670_write(0x11, 0x01);
+//
+//    // RGB565
+//    ov7670_write(0x40, 0xD0);
+//
+//    // TSLB (common setting)
+//    ov7670_write(0x3A, 0x04);
+//}
+//
+//uint8_t ov7670_read(uint8_t reg)
+//{
+//    volatile uint32_t timeout;
+//
+//    timeout = 100000;
+//    while ((EUSCI_B1->STATW & EUSCI_B_STATW_BBUSY) && --timeout);
+//    if (timeout == 0) return 0xFF;
+//
+//    EUSCI_B1->I2CSA = 0x21;
+//
+//    EUSCI_B1->CTLW0 |= EUSCI_B_CTLW0_TR;
+//    EUSCI_B1->CTLW0 |= EUSCI_B_CTLW0_TXSTT;
+//
+//    timeout = 100000;
+//    while (!(EUSCI_B1->IFG & EUSCI_B_IFG_TXIFG0) && --timeout);
+//    if (timeout == 0) return 0xFF;
+//
+//    EUSCI_B1->TXBUF = reg;
+//
+//    timeout = 100000;
+//    while (!(EUSCI_B1->IFG & EUSCI_B_IFG_TXIFG0) && --timeout);
+//    if (timeout == 0) return 0xFF;
+//
+//    EUSCI_B1->CTLW0 &= ~EUSCI_B_CTLW0_TR;
+//    EUSCI_B1->CTLW0 |= EUSCI_B_CTLW0_TXSTT;
+//
+//    timeout = 100000;
+//    while ((EUSCI_B1->CTLW0 & EUSCI_B_CTLW0_TXSTT) && --timeout);
+//    if (timeout == 0) return 0xFF;
+//
+//    EUSCI_B1->CTLW0 |= EUSCI_B_CTLW0_TXSTP;
+//
+//    timeout = 100000;
+//    while (!(EUSCI_B1->IFG & EUSCI_B_IFG_RXIFG0) && --timeout);
+//    if (timeout == 0) return 0xFF;
+//
+//    return EUSCI_B1->RXBUF;
+//}
+//
+//void ov7670_enable_colorbar(void)
+//{
+//    ov7670_write(0x12, 0x04);  // COM7 = RGB
+//    ov7670_write(0x40, 0xD0);  // COM15 = RGB565/full range
+//    ov7670_write(0x3A, 0x04);  // TSLB
+//    ov7670_write(0x42, 0x08);  // COM17 = color bar enable
+//}
+
+static void cam_delay(volatile uint32_t n)
+{
+    while (n--) __NOP();
+}
+
+void camera_gpio_init(void)
+{
+    // D0..D6 on P4.1..P4.7
+    P4->SEL0 &= ~0xFE;
+    P4->SEL1 &= ~0xFE;
+    P4->DIR  &= ~0xFE;
+    P4->REN  &= ~0xFE;
+
+    // D7 on P5.0
+    P5->SEL0 &= ~BIT0;
+    P5->SEL1 &= ~BIT0;
+    P5->DIR  &= ~BIT0;
+    P5->REN  &= ~BIT0;
+
+    // VSYNC/HREF/PCLK on P2.5/P2.6/P2.7
+    P2->SEL0 &= ~0xE0;
+    P2->SEL1 &= ~0xE0;
+    P2->DIR  &= ~0xE0;
+    P2->REN  &= ~0xE0;
+
+    // RESET/PWDN outputs on P5.1/P5.2
+    P5->DIR |= CAM_RESET | CAM_PWDN;
+
+    // normal mode
+    P5->OUT &= ~CAM_PWDN;   // PWDN low
+    P5->OUT |= CAM_RESET;   // RESET high
+}
+
+void camera_xclk_init(void)
+{
+    // P2.4 as TA0.1 output
+    P2->DIR  |= BIT4;
+    P2->SEL0 |= BIT4;
+    P2->SEL1 &= ~BIT4;
+
+    TIMER_A0->CCR[0]  = 3;   // very fast clock from SMCLK
+    TIMER_A0->CCR[1]  = 1;
+    TIMER_A0->CCTL[1] = TIMER_A_CCTLN_OUTMOD_7;
+    TIMER_A0->CTL     = TIMER_A_CTL_SSEL__SMCLK | TIMER_A_CTL_MC__UP | TIMER_A_CTL_CLR;
+}
+
+void camera_i2c_init(void)
+{
+    P6->SEL0 |= BIT4 | BIT5;          // P6.4 SDA, P6.5 SCL
+    P6->SEL1 &= ~(BIT4 | BIT5);
+
+    EUSCI_B1->CTLW0 = EUSCI_B_CTLW0_SWRST;
+    EUSCI_B1->IE    = 0;
+    EUSCI_B1->IFG   = 0;
+
+    EUSCI_B1->CTLW0 = EUSCI_B_CTLW0_SWRST |
+                      EUSCI_B_CTLW0_MODE_3 |
+                      EUSCI_B_CTLW0_MST |
+                      EUSCI_B_CTLW0_SYNC |
+                      EUSCI_B_CTLW0_SSEL__SMCLK;
+
+    EUSCI_B1->BRW   = 30;             // ~100 kHz if SMCLK ~3 MHz
+    EUSCI_B1->I2CSA = OV7670_ADDR;
+
+    EUSCI_B1->CTLW0 &= ~EUSCI_B_CTLW0_SWRST;
+}
+
+int ov7670_write(uint8_t reg, uint8_t val)
+{
+    volatile uint32_t timeout = 100000;
+
+    while ((EUSCI_B1->STATW & EUSCI_B_STATW_BBUSY) && --timeout);
+    if (!timeout) return 0;
+
+    EUSCI_B1->I2CSA = OV7670_ADDR;
+    EUSCI_B1->CTLW0 |= EUSCI_B_CTLW0_TR;
+    EUSCI_B1->CTLW0 |= EUSCI_B_CTLW0_TXSTT;
+
+    timeout = 100000;
+    while (!(EUSCI_B1->IFG & EUSCI_B_IFG_TXIFG0) && --timeout);
+    if (!timeout) return 0;
+    EUSCI_B1->TXBUF = reg;
+
+    timeout = 100000;
+    while (!(EUSCI_B1->IFG & EUSCI_B_IFG_TXIFG0) && --timeout);
+    if (!timeout) return 0;
+    EUSCI_B1->TXBUF = val;
+
+    timeout = 100000;
+    while (!(EUSCI_B1->IFG & EUSCI_B_IFG_TXIFG0) && --timeout);
+    if (!timeout) return 0;
+
+    EUSCI_B1->CTLW0 |= EUSCI_B_CTLW0_TXSTP;
+
+    timeout = 100000;
+    while ((EUSCI_B1->CTLW0 & EUSCI_B_CTLW0_TXSTP) && --timeout);
+    return timeout ? 1 : 0;
+}
+
+uint8_t ov7670_read(uint8_t reg)
+{
+    volatile uint32_t timeout = 100000;
+
+    while ((EUSCI_B1->STATW & EUSCI_B_STATW_BBUSY) && --timeout);
+    if (!timeout) return 0xFF;
+
+    EUSCI_B1->I2CSA = OV7670_ADDR;
+
+    EUSCI_B1->CTLW0 |= EUSCI_B_CTLW0_TR;
+    EUSCI_B1->CTLW0 |= EUSCI_B_CTLW0_TXSTT;
+
+    timeout = 100000;
+    while (!(EUSCI_B1->IFG & EUSCI_B_IFG_TXIFG0) && --timeout);
+    if (!timeout) return 0xFF;
+    EUSCI_B1->TXBUF = reg;
+
+    timeout = 100000;
+    while (!(EUSCI_B1->IFG & EUSCI_B_IFG_TXIFG0) && --timeout);
+    if (!timeout) return 0xFF;
+
+    EUSCI_B1->CTLW0 &= ~EUSCI_B_CTLW0_TR;
+    EUSCI_B1->CTLW0 |= EUSCI_B_CTLW0_TXSTT;
+
+    timeout = 100000;
+    while ((EUSCI_B1->CTLW0 & EUSCI_B_CTLW0_TXSTT) && --timeout);
+    if (!timeout) return 0xFF;
+
+    EUSCI_B1->CTLW0 |= EUSCI_B_CTLW0_TXSTP;
+
+    timeout = 100000;
+    while (!(EUSCI_B1->IFG & EUSCI_B_IFG_RXIFG0) && --timeout);
+    if (!timeout) return 0xFF;
+
+    return EUSCI_B1->RXBUF;
+}
+
+uint8_t cam_read_byte(void)
+{
+    return ((P4->IN >> 1) & 0x7F) | ((P5->IN & BIT0) << 7);
+}
+
+void ov7670_init(void)
+{
+    // datasheet/app note say reset first
+    ov7670_write(0x12, 0x80);
+    cam_delay(100000);
+
+    // basic RGB565 path
+    ov7670_write(0x12, 0x04);  // COM7 RGB
+    ov7670_write(0x11, 0x01);  // CLKRC divide a bit
+    ov7670_write(0x40, 0xD0);  // COM15 RGB565/full range
+    ov7670_write(0x3A, 0x04);  // TSLB common RGB565 setting
+}
+
+void ov7670_enable_colorbar(void)
+{
+    ov7670_write(0x42, 0x08);  // COM17 color bar enable
+}
+
+void ov7670_set_qqvga_rgb565(void)
+{
+    // This is a practical starter table, not a guaranteed-universal one.
+    // Goal: small scaled output that fits MSP432 RAM/debugging better.
+    ov7670_write(0x12, 0x14);  // COM7: QVGA + RGB
+    ov7670_write(0x40, 0xD0);  // COM15: RGB565 + full range
+    ov7670_write(0x3A, 0x04);  // TSLB
+
+    ov7670_write(0x0C, 0x04);  // COM3: enable scaling/DCW
+    ov7670_write(0x3E, 0x19);  // COM14: enable scaling/DCW/PCLK divide
+
+    // Common downsample/scaler values used for small RGB565 output
+    ov7670_write(0x70, 0x3A);  // SCALING_XSC
+    ov7670_write(0x71, 0x35);  // SCALING_YSC
+    ov7670_write(0x72, 0x11);  // SCALING_DCWCTR
+    ov7670_write(0x73, 0xF1);  // SCALING_PCLK_DIV
+    ov7670_write(0xA2, 0x02);  // SCALING_PCLK_DELAY
+}
